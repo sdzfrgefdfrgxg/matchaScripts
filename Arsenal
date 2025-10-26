@@ -1,0 +1,175 @@
+-- Arsenal Script for Arcane Hub
+-- Clean version based on decompiled code
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local Mouse = LocalPlayer:GetMouse()
+
+-- Configuration
+local Config = {
+    -- Main Toggles
+    Enabled = true,
+    Watermark = true,
+    DebugMode = false,
+    
+    -- Weapon Mods
+    NoSpread = false,
+    NoRecoil = false,
+    RapidFire = false,
+    InstantReload = false,
+    InfiniteAmmo = false,
+    
+    -- Visuals
+    ShowMenu = true,
+    MenuKey = Enum.KeyCode.RightShift,
+    
+    -- Values
+    FireRate = 1.0,
+    ReloadTime = 1.0,
+    SpreadReduction = 1.0,
+    RecoilReduction = 1.0
+}
+
+-- UI Library (simplified version)
+local UILib = {}
+UILib.Window = function(title)
+    local window = {}
+    window.Title = title or "Arsenal Script"
+    window.Visible = true
+    
+    -- Create UI elements here (simplified)
+    function window:CreateSection(name)
+        local section = {}
+        section.Name = name
+        -- Section implementation
+        return section
+    end
+    
+    function window:CreateToggle(name, default, callback)
+        local toggle = {}
+        toggle.Value = default or false
+        
+        function toggle:SetValue(val)
+            toggle.Value = val
+            if callback then callback(val) end
+        end
+        
+        return toggle
+    end
+    
+    return window
+end
+
+-- Main UI
+local Window = UILib.Window("Nigger - Arsenal")
+
+-- Weapon Modifications
+local function setupWeaponMods()
+    local mt = getrawmetatable(game)
+    local oldNamecall = mt.__namecall
+    
+    setreadonly(mt, false)
+    
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        local args = {...}
+        
+        -- Handle specific game functions
+        if Config.Enabled then
+            -- Spread modification
+            if method == "FindFirstChild" and tostring(self) == "Spread" then
+                if Config.NoSpread then
+                    return 0
+                end
+            end
+            
+            -- Recoil modification
+            if method == "FindFirstChild" and tostring(self) == "Recoil" then
+                if Config.NoRecoil then
+                    return 0
+                end
+            end
+            
+            -- Fire rate modification
+            if method == "FireServer" and tostring(self) == "Shoot" then
+                if Config.RapidFire then
+                    -- Implement rapid fire logic
+                end
+            end
+            
+            -- Ammo modification
+            if method == "InvokeServer" and tostring(self) == "Ammo" then
+                if Config.InfiniteAmmo then
+                    -- Implement infinite ammo logic
+                    return 30, 30 -- Example: Return full ammo
+                end
+            end
+        end
+        
+        return oldNamecall(self, unpack(args))
+    end)
+    
+    setreadonly(mt, true)
+end
+
+-- Toggle menu visibility
+local function toggleMenu()
+    Config.ShowMenu = not Config.ShowMenu
+    -- Update menu visibility here
+end
+
+-- Input handling
+local UserInputService = game:GetService("UserInputService")
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    
+    if input.KeyCode == Config.MenuKey then
+        toggleMenu()
+    end
+end)
+
+-- Initialize
+local function init()
+    -- Setup weapon modifications
+    setupWeaponMods()
+    
+    -- Create UI elements
+    local mainSection = Window:CreateSection("Main")
+    local weaponSection = Window:CreateSection("Weapon Mods")
+    
+    -- Add toggles
+    Window:CreateToggle("Enable Script", true, function(val)
+        Config.Enabled = val
+    end)
+    
+    weaponSection:CreateToggle("No Spread", false, function(val)
+        Config.NoSpread = val
+    end)
+    
+    weaponSection:CreateToggle("No Recoil", false, function(val)
+        Config.NoRecoil = val
+    end)
+    
+    weaponSection:CreateToggle("Rapid Fire", false, function(val)
+        Config.RapidFire = val
+    end)
+    
+    weaponSection:CreateToggle("Infinite Ammo", false, function(val)
+        Config.InfiniteAmmo = val
+    end)
+    
+    -- Watermark
+    if Config.Watermark then
+        -- Create watermark UI here
+    end
+    
+    print("Arsenal Script loaded successfully!")
+end
+
+-- Start the script
+init()
+
+return {
+    Config = Config,
+    ToggleMenu = toggleMenu
+}
