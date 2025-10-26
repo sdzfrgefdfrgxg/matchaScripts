@@ -25,13 +25,37 @@ local Config = {
     RecoilReduction = 0.0
 }
 
--- UI
-local window = Matcha.Window({
-    Title = "Arsenal Script",
-    Size = Vector2.new(300, 400),
-    Position = Vector2.new(0.5, 0.5),
-    Color = Color3.fromRGB(35, 35, 35)
-})
+-- Check available Matcha methods
+local function getMatchaWindow()
+    -- Try different possible window creation methods
+    if Matcha.CreateWindow then
+        return Matcha.CreateWindow({
+            Title = "Arsenal Script",
+            Size = Vector2.new(300, 400),
+            Position = Vector2.new(0.5, 0.5),
+            Color = Color3.fromRGB(35, 35, 35)
+        })
+    elseif Matcha.Window then
+        return Matcha.Window({
+            Title = "Arsenal Script",
+            Size = Vector2.new(300, 400),
+            Position = Vector2.new(0.5, 0.5),
+            Color = Color3.fromRGB(35, 35, 35)
+        })
+    elseif Matcha.new then
+        return Matcha.new("Window", {
+            Title = "Arsenal Script",
+            Size = Vector2.new(300, 400),
+            Position = Vector2.new(0.5, 0.5),
+            Color = Color3.fromRGB(35, 35, 35)
+        })
+    else
+        error("Could not find a valid window creation method in Matcha")
+    end
+end
+
+-- Create window
+local window = getMatchaWindow()
 
 -- Add UI elements
 local yPos = 10
@@ -41,34 +65,34 @@ local function addSpacing(amount)
 end
 
 -- Status label
-window:Label({
-    text = "Arsenal Script v1.0",
-    position = Vector2.new(10, addSpacing(25)),
-    size = Vector2.new(280, 20),
-    textColor = Color3.new(1, 1, 1)
+window:AddLabel({
+    Text = "Arsenal Script v1.0",
+    Position = Vector2.new(10, addSpacing(25)),
+    Size = Vector2.new(280, 20),
+    TextColor = Color3.new(1, 1, 1)
 })
 
 -- Add section header
 local function addSection(title)
-    window:Label({
-        text = title,
-        position = Vector2.new(10, addSpacing(30)),
-        size = Vector2.new(280, 20),
-        textColor = Color3.fromRGB(200, 200, 200)
+    window:AddLabel({
+        Text = title,
+        Position = Vector2.new(10, addSpacing(30)),
+        Size = Vector2.new(280, 20),
+        TextColor = Color3.fromRGB(200, 200, 200)
     })
     addSpacing(5)
 end
 
 -- Add toggle function
 local function addToggle(text, configKey, tooltip)
-    local toggle = window:Toggle({
-        text = text,
-        position = Vector2.new(10, addSpacing(30)),
-        size = Vector2.new(280, 25),
-        color = Color3.fromRGB(65, 65, 65),
-        textColor = Color3.new(1, 1, 1),
-        tooltip = tooltip,
-        callback = function(state)
+    local toggle = window:AddToggle({
+        Text = text,
+        Position = Vector2.new(10, addSpacing(30)),
+        Size = Vector2.new(280, 25),
+        Color = Color3.fromRGB(65, 65, 65),
+        TextColor = Color3.new(1, 1, 1),
+        Tooltip = tooltip,
+        Callback = function(state)
             Config[configKey] = state
             if configKey == "NoSpread" then
                 Config.SpreadReduction = state and 1.0 or 0.0
@@ -82,17 +106,17 @@ end
 
 -- Add sliders
 local function addSlider(text, configKey, min, max, default, tooltip)
-    local slider = window:Slider({
-        text = text,
-        position = Vector2.new(10, addSpacing(40)),
-        size = Vector2.new(280, 30),
-        min = min,
-        max = max,
-        value = default,
-        color = Color3.fromRGB(65, 65, 65),
-        textColor = Color3.new(1, 1, 1),
-        tooltip = tooltip,
-        callback = function(value)
+    local slider = window:AddSlider({
+        Text = text,
+        Position = Vector2.new(10, addSpacing(40)),
+        Size = Vector2.new(280, 30),
+        Min = min,
+        Max = max,
+        Value = default,
+        Color = Color3.fromRGB(65, 65, 65),
+        TextColor = Color3.new(1, 1, 1),
+        Tooltip = tooltip,
+        Callback = function(value)
             Config[configKey] = value
         end
     })
@@ -117,7 +141,7 @@ local recoilReductionSlider = addSlider("Recoil Reduction", "RecoilReduction", 0
 local function handleInput()
     while wait(0.1) do
         if iskeypressed(Config.MenuKey) then
-            window:SetVisible(not window:IsVisible())
+            window.Visible = not window.Visible
             wait(0.5)  -- Prevent rapid toggling
         end
     end
@@ -185,5 +209,5 @@ print("Arsenal Script initialized successfully!")
 -- Return the config table for external access if needed
 return {
     Config = Config,
-    ToggleMenu = function() window:SetVisible(not window:IsVisible()) end
+    ToggleMenu = function() window.Visible = not window.Visible end
 }
