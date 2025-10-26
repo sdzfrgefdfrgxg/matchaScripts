@@ -1,16 +1,12 @@
--- Arsenal Script 
+-- Arsenal Script for Matcha
+local Matcha = getgenv().Matcha
 
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local Mouse = LocalPlayer:GetMouse()
+if not Matcha then
+    error("Matcha not found! Please make sure Matcha is loaded before running this script.")
+end
 
 -- Configuration
 local Config = {
-    -- Main Toggles
-    Enabled = true,
-    Watermark = true,
-    DebugMode = false,
-    
     -- Weapon Mods
     NoSpread = false,
     NoRecoil = false,
@@ -20,48 +16,114 @@ local Config = {
     
     -- Visuals
     ShowMenu = true,
+    MenuKey = 0x10,  -- VK_SHIFT
     
     -- Values
     FireRate = 1.0,
     ReloadTime = 1.0,
-    SpreadReduction = 1.0,
-    RecoilReduction = 1.0
+    SpreadReduction = 0.0,
+    RecoilReduction = 0.0
 }
 
--- UI Library (simplified version)
-local UILib = {}
-UILib.Window = function(title)
-    local window = {}
-    window.Title = title or "Arsenal Script"
-    window.Visible = true
-    
-    -- Create UI elements here (simplified)
-    function window:CreateSection(name)
-        local section = {}
-        section.Name = name
-        -- Section implementation
-        return section
-    end
-    
-    function window:CreateToggle(name, default, callback)
-        local toggle = {}
-        toggle.Value = default or false
-        
-        function toggle:SetValue(val)
-            toggle.Value = val
-            if callback then callback(val) end
-        end
-        
-        return toggle
-    end
-    
-    return window
+-- UI
+local window = Matcha.Window({
+    Title = "Arsenal Script",
+    Size = Vector2.new(300, 400),
+    Position = Vector2.new(0.5, 0.5),
+    Color = Color3.fromRGB(35, 35, 35)
+})
+
+-- Add UI elements
+local yPos = 10
+local function addSpacing(amount)
+    yPos = yPos + amount
+    return yPos - amount
 end
 
--- Main UI
-local Window = UILib.Window("Nigger - Arsenal")
+-- Status label
+window:Label({
+    text = "Arsenal Script v1.0",
+    position = Vector2.new(10, addSpacing(25)),
+    size = Vector2.new(280, 20),
+    textColor = Color3.new(1, 1, 1)
+})
 
--- Weapon Modifications
+-- Add section header
+local function addSection(title)
+    window:Label({
+        text = title,
+        position = Vector2.new(10, addSpacing(30)),
+        size = Vector2.new(280, 20),
+        textColor = Color3.fromRGB(200, 200, 200)
+    })
+    addSpacing(5)
+end
+
+-- Add toggle function
+local function addToggle(text, configKey, tooltip)
+    local toggle = window:Toggle({
+        text = text,
+        position = Vector2.new(10, addSpacing(30)),
+        size = Vector2.new(280, 25),
+        color = Color3.fromRGB(65, 65, 65),
+        textColor = Color3.new(1, 1, 1),
+        tooltip = tooltip,
+        callback = function(state)
+            Config[configKey] = state
+            if configKey == "NoSpread" then
+                Config.SpreadReduction = state and 1.0 or 0.0
+            elseif configKey == "NoRecoil" then
+                Config.RecoveryReduction = state and 1.0 or 0.0
+            end
+        end
+    })
+    return toggle
+end
+
+-- Add sliders
+local function addSlider(text, configKey, min, max, default, tooltip)
+    local slider = window:Slider({
+        text = text,
+        position = Vector2.new(10, addSpacing(40)),
+        size = Vector2.new(280, 30),
+        min = min,
+        max = max,
+        value = default,
+        color = Color3.fromRGB(65, 65, 65),
+        textColor = Color3.new(1, 1, 1),
+        tooltip = tooltip,
+        callback = function(value)
+            Config[configKey] = value
+        end
+    })
+    return slider
+end
+
+-- Add sections and controls
+addSection("Weapon Mods")
+local noSpreadToggle = addToggle("No Spread", "NoSpread", "Removes weapon spread")
+local noRecoilToggle = addToggle("No Recoil", "NoRecoil", "Removes weapon recoil")
+local rapidFireToggle = addToggle("Rapid Fire", "RapidFire", "Increases fire rate")
+local instantReloadToggle = addToggle("Instant Reload", "InstantReload", "Removes reload time")
+local infiniteAmmoToggle = addToggle("Infinite Ammo", "InfiniteAmmo", "Never run out of ammo")
+
+addSection("Advanced")
+local fireRateSlider = addSlider("Fire Rate Multiplier", "FireRate", 0.1, 5.0, 1.0, "Adjust weapon fire rate")
+local reloadTimeSlider = addSlider("Reload Time", "ReloadTime", 0.1, 5.0, 1.0, "Adjust reload time")
+local spreadReductionSlider = addSlider("Spread Reduction", "SpreadReduction", 0.0, 1.0, 0.0, "Reduce weapon spread")
+local recoilReductionSlider = addSlider("Recoil Reduction", "RecoilReduction", 0.0, 1.0, 0.0, "Reduce weapon recoil")
+
+-- Input handling
+local function handleInput()
+    while wait(0.1) do
+        if iskeypressed(Config.MenuKey) then
+            window:SetVisible(not window:IsVisible())
+            wait(0.5)  -- Prevent rapid toggling
+        end
+    end
+end
+
+-- Weapon modifications
 local function setupWeaponMods()
     local mt = getrawmetatable(game)
     local oldNamecall = mt.__namecall
@@ -72,35 +134,39 @@ local function setupWeaponMods()
         local method = getnamecallmethod()
         local args = {...}
         
-        -- Handle specific game functions
-        if Config.Enabled then
-            -- Spread modification
-            if method == "FindFirstChild" and tostring(self) == "Spread" then
-                if Config.NoSpread then
-                    return 0
-                end
+        -- Apply weapon modifications
+        if method == "FindFirstChild" then
+            local name = tostring(self)
+            
+            -- Handle spread
+            if name == "Spread" and Config.NoSpread then
+                return 0
             end
             
-            -- Recoil modification
-            if method == "FindFirstChild" and tostring(self) == "Recoil" then
-                if Config.NoRecoil then
-                    return 0
-                end
+            -- Handle recoil
+            if name == "Recoil" and Config.NoRecoil then
+                return 0
+            end
+        end
+        
+        -- Handle fire rate and other modifications
+        if method == "InvokeServer" or method == "FireServer" then
+            local name = tostring(self)
+            
+            -- Handle rapid fire
+            if name == "Shoot" and Config.RapidFire then
+                -- Implement rapid fire logic
             end
             
-            -- Fire rate modification
-            if method == "FireServer" and tostring(self) == "Shoot" then
-                if Config.RapidFire then
-                    -- Implement rapid fire logic
-                end
+            -- Handle instant reload
+            if name == "Reload" and Config.InstantReload then
+                -- Implement instant reload logic
             end
             
-            -- Ammo modification
-            if method == "InvokeServer" and tostring(self) == "Ammo" then
-                if Config.InfiniteAmmo then
-                    -- Implement infinite ammo logic
-                    return 30, 30 -- Example: Return full ammo
-                end
+            -- Handle infinite ammo
+            if name == "Ammo" and Config.InfiniteAmmo then
+                -- Return max ammo values
+                return 999, 999
             end
         end
         
@@ -110,67 +176,14 @@ local function setupWeaponMods()
     setreadonly(mt, true)
 end
 
--- Toggle menu visibility
-local function toggleMenu()
-    Config.ShowMenu = not Config.ShowMenu
-    -- Update menu visibility here
-end
-
--- Input handling
-local function handleInput()
-    while wait(0.1) do  -- Check for input every 0.1 seconds
-        if iskeypressed(0x10) then  -- 0x10 is the virtual key code for Shift key
-            toggleMenu()
-            wait(0.5)  -- Prevent rapid toggling
-        end
-    end
-end
-
--- Start the input handler in a separate thread
+-- Initialize
+setupWeaponMods()
 coroutine.wrap(handleInput)()
 
--- Initialize
-local function init()
-    -- Setup weapon modifications
-    setupWeaponMods()
-    
-    -- Create UI elements
-    local mainSection = Window:CreateSection("Main")
-    local weaponSection = Window:CreateSection("Weapon Mods")
-    
-    -- Add toggles
-    Window:CreateToggle("Enable Script", true, function(val)
-        Config.Enabled = val
-    end)
-    
-    weaponSection:CreateToggle("No Spread", false, function(val)
-        Config.NoSpread = val
-    end)
-    
-    weaponSection:CreateToggle("No Recoil", false, function(val)
-        Config.NoRecoil = val
-    end)
-    
-    weaponSection:CreateToggle("Rapid Fire", false, function(val)
-        Config.RapidFire = val
-    end)
-    
-    weaponSection:CreateToggle("Infinite Ammo", false, function(val)
-        Config.InfiniteAmmo = val
-    end)
-    
-    -- Watermark
-    if Config.Watermark then
-        -- Create watermark UI here
-    end
-    
-    print("Arsenal Script loaded successfully!")
-end
+print("Arsenal Script initialized successfully!")
 
--- Start the script
-init()
-
+-- Return the config table for external access if needed
 return {
     Config = Config,
-    ToggleMenu = toggleMenu
+    ToggleMenu = function() window:SetVisible(not window:IsVisible()) end
 }
