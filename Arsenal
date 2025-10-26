@@ -1,5 +1,4 @@
--- Arsenal Script for Arcane Hub
--- Clean version based on decompiled code
+-- Arsenal Script 
 
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
