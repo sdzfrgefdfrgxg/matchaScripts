@@ -20,7 +20,6 @@ local Config = {
     
     -- Visuals
     ShowMenu = true,
-    MenuKey = Enum.KeyCode.RightShift,
     
     -- Values
     FireRate = 1.0,
@@ -118,14 +117,17 @@ local function toggleMenu()
 end
 
 -- Input handling
-local UserInputService = game:GetService("UserInputService")
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if gameProcessed then return end
-    
-    if input.KeyCode == Config.MenuKey then
-        toggleMenu()
+local function handleInput()
+    while wait(0.1) do  -- Check for input every 0.1 seconds
+        if iskeypressed(0x10) then  -- 0x10 is the virtual key code for Shift key
+            toggleMenu()
+            wait(0.5)  -- Prevent rapid toggling
+        end
     end
-end)
+end
+
+-- Start the input handler in a separate thread
+coroutine.wrap(handleInput)()
 
 -- Initialize
 local function init()
