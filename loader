@@ -1,0 +1,52 @@
+
+
+local Loader = {}
+
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+
+-- Game Data
+local PlaceId = game.PlaceId
+local JobId = game.JobId
+
+-- Your supported games - Add your game IDs and names here
+local SupportedGames = {
+    -- Example: [GAME_ID] = "Game Name",
+    [286090429] = "Arsenal",  -- Arsenal game ID
+    [987654321] = "Another Game"
+}
+
+-- Function to check if game is supported
+local function GetSupportedGame(placeId)
+    local name = SupportedGames[placeId]
+    if not name then
+        return false, "Unsupported game."
+    end
+    return true, name
+end
+
+-- Main execution
+local isSupported, gameName = GetSupportedGame(PlaceId)
+if not isSupported then
+    warn(gameName) -- Shows "Unsupported game" message
+    return Loader
+end
+
+print("Supported game found: " .. gameName)
+print("Loading your scripts...")
+
+-- Load different scripts based on game
+if gameName == "Arsenal" then
+    -- Load the Arsenal script
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/sdzfrgefdfrgxg/matchaScripts/refs/heads/main/Arsenal"))()
+elseif gameName == "Another Game" then
+    -- Load another script
+    -- loadstring(game:HttpGet("ANOTHER_SCRIPT_URL"))()
+    
+end 
+
+task.wait(0.5)
+print("Loader finished initializing.")
+
+return Loader
