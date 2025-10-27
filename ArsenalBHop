@@ -1,8 +1,8 @@
 -- Bunny Hop Script for Arsenal
 -- Automatically jumps when holding spacebar and in the air
 
-local floorMaterial = 0x190; -- Memory offset for floor material check
 local players = game:GetService("Players")
+local userInputService = game:GetService("UserInputService")
 local localPlayer = players.LocalPlayer
 local playerGui = localPlayer:WaitForChild("PlayerGui")
 
@@ -84,21 +84,17 @@ gui.Parent = playerGui
 -- Main loop for bunny hopping
 while true do
     if enabled then
-        local holdingSpace = iskeypressed(0x20) -- 0x20 is the virtual key code for Spacebar
+        local holdingSpace = userInputService:IsKeyDown(Enum.KeyCode.Space)
         
         local character = localPlayer.Character
         if character and character.Parent then
-            local humanoid = character:FindFirstChild("Humanoid")
+            local humanoid = character:FindFirstChildOfClass("Humanoid")
             local hrp = character:FindFirstChild("HumanoidRootPart")
             
-            if humanoid and hrp then
-                local floorMat = memory_read("int", humanoid.Address + floorMaterial)
-                local jumpPower = memory_read("float", humanoid.Address + 0x1B0)
-                
-                -- Check if not on ground (floorMat ~= 1792) and space is held
-                if floorMat ~= 1792 and holdingSpace then
-                    local vel = hrp.Velocity
-                    hrp.Velocity = Vector3.new(vel.x, jumpPower, vel.z)
+            if humanoid and hrp and humanoid.Health > 0 then
+                -- Check if not on ground and space is held
+                if not humanoid:GetState() == Enum.HumanoidStateType.Landed and holdingSpace then
+                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
                 end
             end
         end
