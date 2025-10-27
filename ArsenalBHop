@@ -1,0 +1,107 @@
+-- Bunny Hop Script for Arsenal
+-- Automatically jumps when holding spacebar and in the air
+
+local floorMaterial = 0x190; -- Memory offset for floor material check
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+local playerGui = localPlayer:WaitForChild("PlayerGui")
+
+-- Create main GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "BunnyHopGUI"
+gui.ResetOnSpawn = false
+
+-- Main frame nigga
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 200, 0, 80)
+frame.Position = UDim2.new(0.8, 0, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+
+-- Title
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.Text = "Bunny Hop"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
+title.Parent = frame
+
+-- Toggle button
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0.8, 0, 0, 30)
+toggleButton.Position = UDim2.new(0.1, 0, 0.5, 0)
+toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+toggleButton.BorderSizePixel = 0
+toggleButton.Text = "Toggle (F8)"
+toggleButton.TextColor3 = Color3.new(1, 1, 1)
+toggleButton.TextSize = 14
+toggleButton.Font = Enum.Font.Gotham
+
+toggleButton.MouseButton1Click:Connect(function()
+    enabled = not enabled
+    updateButton()
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == Enum.KeyCode.F8 and not gameProcessed then
+        enabled = not enabled
+        updateButton()
+    end
+end)
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 20)
+statusLabel.Position = UDim2.new(0, 0, 0.8, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "Status: "
+statusLabel.TextColor3 = Color3.new(1, 1, 1)
+statusLabel.TextSize = 12
+statusLabel.Font = Enum.Font.Gotham
+statusLabel.Parent = frame
+
+local enabled = true
+local function updateButton()
+    if enabled then
+        toggleButton.BackgroundColor3 = Color3.fromRGB(76, 209, 55)
+        statusLabel.Text = "Status: ENABLED"
+    else
+        toggleButton.BackgroundColor3 = Color3.fromRGB(255, 71, 87)
+        statusLabel.Text = "Status: DISABLED"
+    end
+end
+
+updateButton()
+toggleButton.Parent = frame
+
+-- Add to player's GUI
+gui.Parent = playerGui
+
+-- Main loop for bunny hopping
+while true do
+    if enabled then
+        local holdingSpace = iskeypressed(0x20) -- 0x20 is the virtual key code for Spacebar
+        
+        local character = localPlayer.Character
+        if character and character.Parent then
+            local humanoid = character:FindFirstChild("Humanoid")
+            local hrp = character:FindFirstChild("HumanoidRootPart")
+            
+            if humanoid and hrp then
+                local floorMat = memory_read("int", humanoid.Address + floorMaterial)
+                local jumpPower = memory_read("float", humanoid.Address + 0x1B0)
+                
+                -- Check if not on ground (floorMat ~= 1792) and space is held
+                if floorMat ~= 1792 and holdingSpace then
+                    local vel = hrp.Velocity
+                    hrp.Velocity = Vector3.new(vel.x, jumpPower, vel.z)
+                end
+            end
+        end
+    end
+    wait(0.01) -- Small delay to prevent excessive CPU usage
+end
