@@ -1,6 +1,12 @@
 -- Bunny Hop Script for Arsenal using Matcha
 -- Automatically jumps when holding spacebar and in the air
 
+-- Wait for game to load
+local function waitForGameLoad()
+    while not game:IsLoaded() do wait() end
+    return true
+end
+
 -- Matcha functions
 local function isKeyPressed(keycode)
     return iskeypressed and iskeypressed(keycode) or false
@@ -12,13 +18,39 @@ local PLAYER_ADDRESS = 0x0  -- You'll need to get the correct base address for t
 local FLOOR_MATERIAL_OFFSET = 0x190
 local JUMP_POWER_OFFSET = 0x1B0
 
-local players = game:GetService("Players")
+-- Initialize game services
+local success, players = pcall(game.GetService, game, "Players")
+if not success then
+    error("Failed to get Players service")
+end
+
 local localPlayer = players.LocalPlayer
+if not localPlayer then
+    error("LocalPlayer not found")
+end
 
 -- Create main GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "BunnyHopGUI"
-gui.ResetOnSpawn = false
+local gui = nil
+local function createGUI()
+    -- Only create GUI if it doesn't exist
+    if not gui or not gui.Parent then
+        gui = Instance.new("ScreenGui")
+        gui.Name = "BunnyHopGUI"
+        gui.ResetOnSpawn = false
+        
+        -- Make sure we have a PlayerGui to parent to
+        local playerGui = localPlayer:FindFirstChild("PlayerGui")
+        if not playerGui then
+            playerGui = localPlayer:WaitForChild("PlayerGui", 10)
+            if not playerGui then
+                error("Failed to find PlayerGui")
+            end
+        end
+        
+        gui.Parent = playerGui
+    end
+    return gui
+end
 
 -- Main frame nigga
 local frame = Instance.new("Frame")
@@ -90,8 +122,16 @@ toggleButton.Parent = frame
 -- Add to player's GUI
 gui.Parent = playerGui
 
--- Main loop for bunny hopping
-while true do
+-- Initialize
+if waitForGameLoad() then
+    -- Create GUI
+    local success, err = pcall(createGUI)
+    if not success then
+        warn("Failed to create GUI: " .. tostring(err))
+    end
+    
+    -- Main loop for bunny hopping
+    while true do
     if enabled then
         local holdingSpace = isKeyPressed(SPACEBAR)
         
@@ -119,5 +159,8 @@ while true do
             end
         end
     end
-    wait(0.01) -- Small delay to prevent excessive CPU usage
+        wait(0.01) -- Small delay to prevent excessive CPU usage
+    end
+else
+    warn("Game failed to load properly")
 end
