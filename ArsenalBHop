@@ -1,10 +1,19 @@
--- Bunny Hop Script for Arsenal
+-- Bunny Hop Script for Arsenal using Matcha
 -- Automatically jumps when holding spacebar and in the air
 
+-- Matcha functions
+local function isKeyPressed(keycode)
+    return iskeypressed and iskeypressed(keycode) or false
+end
+
+-- Constants
+local SPACEBAR = 0x20  -- Virtual key code for Spacebar
+local PLAYER_ADDRESS = 0x0  -- You'll need to get the correct base address for the player
+local FLOOR_MATERIAL_OFFSET = 0x190
+local JUMP_POWER_OFFSET = 0x1B0
+
 local players = game:GetService("Players")
-local userInputService = game:GetService("UserInputService")
 local localPlayer = players.LocalPlayer
-local playerGui = localPlayer:WaitForChild("PlayerGui")
 
 -- Create main GUI
 local gui = Instance.new("ScreenGui")
@@ -84,7 +93,7 @@ gui.Parent = playerGui
 -- Main loop for bunny hopping
 while true do
     if enabled then
-        local holdingSpace = userInputService:IsKeyDown(Enum.KeyCode.Space)
+        local holdingSpace = isKeyPressed(SPACEBAR)
         
         local character = localPlayer.Character
         if character and character.Parent then
@@ -92,9 +101,20 @@ while true do
             local hrp = character:FindFirstChild("HumanoidRootPart")
             
             if humanoid and hrp and humanoid.Health > 0 then
-                -- Check if not on ground and space is held
-                if not humanoid:GetState() == Enum.HumanoidStateType.Landed and holdingSpace then
-                    humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+                -- Get memory addresses (you'll need to find the correct base address)
+                local humanoidAddress = 0x0 -- Replace with actual humanoid address
+                
+                if humanoidAddress ~= 0 then
+                    -- Read floor material and jump power from memory
+                    local floorMat = memory_read("int", humanoidAddress + FLOOR_MATERIAL_OFFSET) or 0
+                    local jumpPower = memory_read("float", humanoidAddress + JUMP_POWER_OFFSET) or 50
+                    
+                    -- Check if not on ground (floorMat ~= 1792) and space is held
+                    if floorMat ~= 1792 and holdingSpace then
+                        -- Simulate jump by applying upward velocity
+                        local vel = hrp.Velocity
+                        hrp.Velocity = Vector3.new(vel.X, jumpPower, vel.Z)
+                    end
                 end
             end
         end
